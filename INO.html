@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>INO</title>
+  <style>
+    :root {
+      --bg: #0c1118;
+      --bg-2: #0a0f18;
+      --panel: rgba(19, 27, 34, 0.82);
+      --panel-2: rgba(28, 36, 46, 0.9);
+      --panel-3: rgba(15, 19, 26, 0.9);
+      --line: rgba(255,255,255,0.08);
+      --text: #edf4ff;
+      --muted: #9ba8b8;
+      --soft: #dfeaf9;
+      --cyan: #39d9ff;
+      --cyan-2: #0dbedb;
+      --cyan-3: #00f0ff;
+      --green: #54e79a;
+      --danger: #ff5b72;
+      --orange: #f3a638;
+      --shadow: rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #06090f 0%, #0a1017 100%);
+      color: var(--text);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      background: linear-gradient(180deg, #050a11 0%, #0b1220 100%);
+      position: relative;
+      overflow: hidden;
+      border-left: 1px solid rgba(255,255,255,0.06);
+      border-right: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 0 40px rgba(0,0,0,.5);
+    }
+
+    .statusbar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 8px 14px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.8);
+      z-index: 30;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      opacity: 0.9;
+    }
+
+    .signal {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      opacity: .9;
+    }
+
+    .signal span {
+      display: inline-block;
+      width: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,.9);
+    }
+
+    .signal span:nth-child(1) { height: 4px; }
+    .signal span:nth-child(2) { height: 7px; }
+    .signal span:nth-child(3) { height: 10px; }
+    .signal span:nth-child(4) { height: 13px; }
+
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 11px;
+      opacity: .9;
+    }
+
+    .battery {
+      width: 26px;
+      height: 12px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.7);
+      position: relative;
+      display: inline-block;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .battery::before {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 3px;
+      width: 2px;
+      height: 6px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 2px;
+    }
+
+    .battery::after {
+      content: "";
+      position: absolute;
+      inset: 2px 2px 2px 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #87ffae 0%, #50f084 60%, #9bffc0 100%);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding-top: 68px;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 18%, rgba(21,44,60,0.7) 0%, rgba(8,12,18,0.0) 55%),
+                  linear-gradient(180deg, #070b12 0%, #0b1018 100%);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 18px 18px 18px;
+      z-index: 10;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      opacity: 0.96;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      box-shadow: 0 0 30px rgba(0,0,0,0.2) inset;
+    }
+
+    .tabbar {
+      position: relative;
+      z-index: 4;
+      margin-top: 8px;
+      padding: 0 18px 0 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .chip {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      min-width: 0;
+      flex: 0 0 auto;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .chip.active {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .list {
+      flex: 1;
+      padding: 10px 0 0 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      margin-bottom: 2px;
+      border-radius: 0;
+      transition: background .2s ease;
+    }
+
+    .chat-row:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a3543, #1e232d);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    .avatar::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.24), transparent 35%);
+    }
+
+    .avatar[data-tone="green"] { background: linear-gradient(135deg, #0a3b2f, #123a37); }
+    .avatar[data-tone="pink"] { background: linear-gradient(135deg, #540f35, #2d1526); }
+    .avatar[data-tone="orange"] { background: linear-gradient(135deg, #6c4214, #2c1608); }
+    .avatar[data-tone="blue"] { background: linear-gradient(135deg, #0f4966, #192d4a); }
+    .avatar[data-tone="purple"] { background: linear-gradient(135deg, #4e1d59, #1a1a3d); }
+    .avatar[data-tone="gray"] { background: linear-gradient(135deg, #4f5c69, #1f2830); }
+    .avatar[data-tone="bronze"] { background: linear-gradient(135deg, #7d4a2e, #2c1c18); }
+
+    .chat-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 3px;
+    }
+
+    .name {
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .time {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: auto;
+      white-space: nowrap;
+      opacity: 0.9;
+    }
+
+    .preview {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.4;
+    }
+
+    .preview strong { color: #e9eef8; }
+    .preview .tag {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .badge-num {
+      min-width: 18px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: var(--green);
+      color: #0c1118;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      margin-left: auto;
+    }
+
+    .badge-num.small {
+      min-width: 16px;
+      height: 16px;
+      font-size: 10px;
+      padding: 0 5px;
+    }
+
+    .chat-surface {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle at 50% 18%, rgba(2,68,90,.11), rgba(0,0,0,0) 45%);
+    }
+
+    .ino-floating {
+      position: absolute;
+      left: 50%;
+      top: 100px;
+      transform: translateX(-50%);
+      width: 260px;
+      height: 220px;
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    .ino-core {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+      width: 142px;
+      height: 142px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 25%, rgba(31,170,208,0.34), rgba(11,17,26,0.6) 48%, rgba(4,7,13,0.9) 75%);
+      border: 2px solid rgba(96,229,255,0.7);
+      box-shadow:
+        0 0 38px rgba(51,215,255,.38),
+        0 0 90px rgba(31,198,235,.16),
+        inset 0 0 24px rgba(58,237,255,.14),
+        inset -15px -18px 30px rgba(0,0,0,.52),
+        inset 16px 16px 30px rgba(38,213,245,.12);
+      animation: pulseCore 4s ease-in-out infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    @keyframes pulseCore {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.04); }
+    }
+
+    .ino-core::before {
+      content: "";
+      position: absolute;
+      inset: 15px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(17,32,40,0.5), rgba(5,10,14,0.15) 60%, rgba(0,0,0,0));
+      box-shadow: inset 0 0 22px rgba(255,255,255,0.04);
+    }
+
+    .ino-eyes {
+      position: absolute;
+      left: 50%;
+      top: 53%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 2;
+    }
+
+    .eye {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.96) 0%, rgba(198,215,224,0.65) 18%, rgba(11,16,22,0.96) 32%, rgba(10,12,17,1) 65%);
+      box-shadow: inset 0 0 12px rgba(255,255,255,0.08), 0 0 16px rgba(46,214,255,0.25);
+      overflow: hidden;
+    }
+
+    .pupil {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 9px;
+      top: 9px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(93,223,255,1) 0%, rgba(10,132,175,0.92) 38%, rgba(0,112,157,1) 100%);
+      box-shadow: 0 0 20px rgba(38,209,255,0.6);
+      transition: transform .14s ease-out;
+    }
+
+    .pupil::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.9);
+      box-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+
+    .ino-status {
+      position: absolute;
+      left: 50%;
+      top: 142px;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.88);
+      letter-spacing: 0.12em;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 4;
+    }
+
+    .ino-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 12px rgba(57,217,255,.9);
+      animation: blinkDot 1.8s infinite ease-in-out;
+    }
+
+    @keyframes blinkDot {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .speech-bubble {
+      position: absolute;
+      left: 72%;
+      top: 115px;
+      transform: translateX(-50%);
+      width: 240px;
+      min-height: 110px;
+      background: rgba(10, 16, 24, 0.12);
+      border: 3px dashed rgba(255,255,255,0.35);
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 20px;
+      color: rgba(255,255,255,0.9);
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 700;
+      text-align: center;
+      box-shadow: inset 0 0 18px rgba(255,255,255,0.04);
+      z-index: 1;
+    }
+
+    .ibubble-text {
+      max-width: 200px;
+      text-shadow: 0 0 12px rgba(255,255,255,0.18);
+    }
+
+    .inputbar {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 72px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 28px;
+      background: rgba(15,18,24,0.9);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 32px rgba(0,0,0,0.15);
+      z-index: 50;
+    }
+
+    .inputbar input {
+      flex: 1;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      padding: 10px 8px;
+      outline: none;
+    }
+
+    .inputbar input::placeholder { color: rgba(255,255,255,0.38); }
+
+    .icon-btn {
+      appearance: none;
+      border: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 18px;
+      transition: transform .2s ease, background .2s ease;
+    }
+
+    .icon-btn:hover { transform: translateY(-1px); }
+
+    .icon-btn.primary {
+      background: linear-gradient(135deg, var(--cyan-2), var(--cyan));
+      color: #071018;
+      font-weight: 800;
+      box-shadow: 0 0 20px rgba(57,217,255,.4);
+    }
+
+    .bottom-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 72px;
+      background: rgba(8, 12, 18, 0.9);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 8px 12px 10px 12px;
+      z-index: 40;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: rgba(255,255,255,0.66);
+      font-size: 12px;
+    }
+
+    .nav-item.active {
+      color: var(--text);
+    }
+
+    .nav-item .glyph {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .nav-item.active .glyph {
+      color: var(--cyan);
+      text-shadow: 0 0 12px rgba(57,217,255,.7);
+    }
+
+    .nav-item .label {
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.92;
+    }
+
+    .debug {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      z-index: 90;
+      display: none;
+    }
+
+    .debug.show { display: block; }
+
+    .modal {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.62);
+      backdrop-filter: blur(3px);
+      z-index: 110;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .panel {
+      width: min(88vw, 370px);
+      background: linear-gradient(180deg, rgba(11,16,21,0.98), rgba(17,23,31,0.98));
+      border: 1px solid rgba(57,217,255,.2);
+      border-radius: 20px;
+      padding: 18px 16px 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    .panel h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .panel-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+    }
+
+    .panel-row label {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .button {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .button.primary {
+      background: linear-gradient(135deg, rgba(14,160,194,0.9), rgba(57,217,255,0.9));
+      color: #051118;
+      border: none;
+    }
+
+    .close-panel {
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 430px) {
+      .app {
+        max-width: 100vw;
+      }
+
+      .ino-floating {
+        width: 220px;
+      }
+
+      .speech-bubble {
+        width: 196px;
+        left: 70%;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <div class="statusbar">
+      <div class="status-left">
+        <span>18:19</span>
+      </div>
+      <div class="status-right">
+        <div class="signal" aria-label="signal">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span>Wi‑Fi</span>
+        <span class="battery" aria-label="battery"></span>
+      </div>
+    </div>
+
+    <div class="screen">
+      <div class="header">
+        <div class="header-title">WhatsApp</div>
+        <div class="header-actions">
+          <div class="header-badge">E</div>
+        </div>
+      </div>
+
+      <div class="tabbar">
+        <div class="chip active">Todos</div>
+        <div class="chip">Não lidas</div>
+        <div class="chip">Favoritos</div>
+      </div>
+
+      <div class="ino-floating">
+        <div class="ino-core" id="inoCore">
+          <div class="ino-eyes">
+            <div class="eye"><div class="pupil" id="pupilL"></div></div>
+            <div class="eye"><div class="pupil" id="pupilR"></div></div>
+          </div>
+        </div>
+        <div class="ino-status" id="statusText">
+          <span class="dot"></span>
+          <span>VOZ</span>
+        </div>
+        <div class="speech-bubble" id="speechBubble">
+          <div class="ibubble-text">Olá, Edmilson em que posso ajudar</div>
+        </div>
+      </div>
+
+      <div class="list">
+        <div class="chat-row">
+          <div class="avatar" data-tone="green"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">Euric fashion</div>
+              <div class="time">17:34</div>
+            </div>
+            <div class="preview"><strong>Ino</strong> • <span class="tag">Novo</span> • 3pcs!! 485Mt depo 3...</div>
+          </div>
+          <div class="badge-num">112</div>
+        </div>
+
+        <div class="chat-row">
+          <div class="avatar" data-tone="pink"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">Moz Tunn</div>
+              <div class="time">17:30</div>
+            </div>
+            <div class="preview">+258 84 583 3711 usou uma ligação do grupo pa...</div>
+          </div>
+        </div>
+
+        <div class="chat-row">
+          <div class="avatar" data-tone="orange"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">Chat de Criadores de Moz</div>
+              <div class="time">08:44</div>
+            </div>
+            <div class="preview">~070: Kmk bh</div>
+          </div>
+          <div class="badge-num small">8</div>
+        </div>
+
+        <div class="chat-row">
+          <div class="avatar" data-tone="gray"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">Pastor FF</div>
+              <div class="time">Ontem</div>
+            </div>
+            <div class="preview">Boa e tú</div>
+          </div>
+        </div>
+
+        <div class="chat-row">
+          <div class="avatar" data-tone="blue"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">Edson</div>
+              <div class="time">23/09/26</div>
+            </div>
+            <div class="preview">https://chatgpt.com/s/t_6ab40f6cd19081918...</div>
+          </div>
+        </div>
+
+        <div class="chat-row">
+          <div class="avatar" data-tone="purple"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">Meta AI</div>
+              <div class="time">23/09/26</div>
+            </div>
+            <div class="preview">Perfeito, Carlos! Agora sim ficou 100% redondo...</div>
+          </div>
+        </div>
+
+        <div class="chat-row">
+          <div class="avatar" data-tone="bronze"></div>
+          <div class="chat-main">
+            <div class="chat-top">
+              <div class="name">VendaFácil Vendedores</div>
+              <div class="time">23/09/26</div>
+            </div>
+            <div class="preview">+258 83 551 6726 usou uma ligação do grupo pa...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="inputbar">
+        <button class="icon-btn" id="menuBtn" aria-label="Menu">＋</button>
+        <input id="messageInput" type="text" placeholder="Ksjsjsj" />
+        <button class="icon-btn" id="micBtn" aria-label="Microfone">🎤</button>
+        <button class="icon-btn primary" id="sendBtn" aria-label="Enviar">➤</button>
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item active"><div class="glyph">💬</div><div class="label">Conversas</div></div>
+        <div class="nav-item"><div class="glyph">◉</div><div class="label">Atualizações</div></div>
+        <div class="nav-item"><div class="glyph">◎</div><div class="label">Comunidades</div></div>
+        <div class="nav-item"><div class="glyph">☎</div><div class="label">Chamadas</div></div>
+      </div>
+    </div>
+
+    <div class="modal" id="settingsModal" aria-modal="true">
+      <div class="panel">
+        <button class="close-panel" id="closePanel">×</button>
+        <h3>INO</h3>
+
+        <div class="panel-row">
+          <div>
+            <label>Idioma</label>
+            <select id="languageSelect">
+              <option value="pt-BR">Português</option>
+              <option value="en-US">English</option>
+              <option value="fr-FR">Français</option>
+              <option value="es-ES">Español</option>
+              <option value="de-DE">Deutsch</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel-row">
+          <div>
+            <label>Modo</label>
+            <select id="modeSelect">
+              <option value="idle">Idle</option>
+              <option value="listening">Listening</option>
+              <option value="processing">Processing</option>
+              <option value="speaking">Speaking</option>
+              <option value="success">Success</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="panel-actions">
+          <button class="button" id="demoBtn">Modo demo</button>
+          <button class="button primary" id="okBtn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="debug" id="debugBox">DEBUG</div>
+  </div>
+
+  <script>
+    const app = {
+      status: 'idle',
+      language: 'pt-BR',
+      speechSupported: ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
+      synthSupported: ('speechSynthesis' in window),
+      recognition: null,
+      isListening: false,
+      isSpeaking: false,
+      name: 'Edmilson'
+    };
+
+    // UI references
+    const statusEl = document.getElementById('statusText');
+    const bubbleText = document.querySelector('.ibubble-text');
+    const core = document.getElementById('inoCore');
+    const messageInput = document.getElementById('messageInput');
+    const micBtn = document.getElementById('micBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const menuBtn = document.getElementById('menuBtn');
+    const modal = document.getElementById('settingsModal');
+    const closePanel = document.getElementById('closePanel');
+    const debugBox = document.getElementById('debugBox');
+    const languageSelect = document.getElementById('languageSelect');
+    const modeSelect = document.getElementById('modeSelect');
+    const demoBtn = document.getElementById('demoBtn');
+    const okBtn = document.getElementById('okBtn');
+
+    const pupilL = document.getElementById('pupilL');
+    const pupilR = document.getElementById('pupilR');
+
+    function setStatusText(value) {
+      statusEl.innerHTML = '<span class="dot"></span><span>' + value + '</span>';
+    }
+
+    function setBubble(text) {
+      bubbleText.textContent = text;
+    }
+
+    function setMode(mode) {
+      app.status = mode;
+      core.style.boxShadow = getBoxShadowByMode(mode);
+      core.style.filter = getFilterByMode(mode);
+      if (mode === 'listening') {
+        core.style.animation = 'pulseCore 1.8s ease-in-out infinite';
+      } else if (mode === 'processing') {
+        core.style.animation = 'pulseCore 0.9s ease-in-out infinite';
+      } else if (mode === 'speaking') {
+        core.style.animation = 'pulseCore 0.5s ease-in-out infinite';
+      } else if (mode === 'error') {
+        core.style.boxShadow = '0 0 40px rgba(255,91,114,.44), inset 0 0 24px rgba(255,91,114,.12), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(255,91,114,.08)';
+      } else if (mode === 'success') {
+        core.style.boxShadow = '0 0 40px rgba(84,231,154,.38), inset 0 0 24px rgba(84,231,154,.12), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(84,231,154,.08)';
+      } else {
+        core.style.animation = 'pulseCore 4s ease-in-out infinite';
+      }
+      setStatusText(mode === 'idle' ? 'VOZ' : mode.toUpperCase());
+    }
+
+    function getBoxShadowByMode(mode) {
+      switch (mode) {
+        case 'listening': return '0 0 48px rgba(51,215,255,.52), 0 0 100px rgba(31,198,235,.2), inset 0 0 24px rgba(58,237,255,.18), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(38,213,245,.12)';
+        case 'processing': return '0 0 54px rgba(93,223,255,.5), 0 0 110px rgba(31,198,235,.24), inset 0 0 30px rgba(93,223,255,.12), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(38,213,245,.1)';
+        case 'speaking': return '0 0 60px rgba(70,228,255,.7), 0 0 110px rgba(31,198,235,.28), inset 0 0 30px rgba(58,237,255,.22), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(38,213,245,.12)';
+        case 'success': return '0 0 40px rgba(84,231,154,.42), inset 0 0 24px rgba(84,231,154,.12), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(84,231,154,.08)';
+        case 'error': return '0 0 40px rgba(255,91,114,.42), inset 0 0 24px rgba(255,91,114,.12), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(255,91,114,.08)';
+        default: return '0 0 38px rgba(51,215,255,.38), 0 0 90px rgba(31,198,235,.16), inset 0 0 24px rgba(58,237,255,.14), inset -15px -18px 30px rgba(0,0,0,.52), inset 16px 16px 30px rgba(38,213,245,.12)';
+      }
+    }
+
+    function getFilterByMode(mode) {
+      return mode === 'processing' ? 'hue-rotate(8deg) saturate(1.2)' : 'none';
+    }
+
+    function blinkEyes() {
+      setTimeout(() => {
+        pupilL.style.transform = 'scaleY(0.12)';
+        pupilR.style.transform = 'scaleY(0.12)';
+        setTimeout(() => {
+          pupilL.style.transform = 'scaleY(1)';
+          pupilR.style.transform = 'scaleY(1)';
+          blinkEyes();
+        }, 120);
+      }, 3000 + Math.random() * 3000);
+    }
+
+    function followMouse() {
+      document.addEventListener('mousemove', (event) => {
+        const x = (event.clientX / window.innerWidth) * 2 - 1;
+        const y = (event.clientY / window.innerHeight) * 2 - 1;
+        const dx = x * 8;
+        const dy = y * 8;
+        if (app.status === 'idle' || app.status === 'listening' || app.status === 'processing') {
+          pupilL.style.transform = `translate(${dx}px, ${dy}px)`;
+          pupilR.style.transform = `translate(${dx}px, ${dy}px)`;
+        }
+      });
+    }
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        setBubble('TTS não suportado neste navegador');
+        return;
+      }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = app.language;
+      utter.rate = 1;
+      utter.pitch = 1;
+      utter.volume = 1;
+      utter.onstart = () => {
+        app.isSpeaking = true;
+        setMode('speaking');
+        setBubble(text);
+      };
+      utter.onend = () => {
+        app.isSpeaking = false;
+        setMode('idle');
+      };
+      utter.onerror = () => {
+        app.isSpeaking = false;
+        setMode('error');
+      };
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    function demoReply(message) {
+      const lower = message.toLowerCase();
+      if (lower.includes('olá') || lower.includes('oi')) {
+        return 'Olá, ' + app.name + '. Como posso ajudar?';
+      }
+      if (lower.includes('hora')) {
+        return 'Agora são ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      }
+      if (lower.includes('data')) {
+        return 'Hoje é ' + new Date().toLocaleDateString('pt-BR');
+      }
+      if (lower.includes('idioma') || lower.includes('inglês') || lower.includes('português')) {
+        return 'Posso responder em vários idiomas. Você pode alterar nas configurações.';
+      }
+      if (lower.includes('quem') && lower.includes('você')) {
+        return 'Sou o INO, seu assistente digital pessoal. Posso atender por voz e texto.';
+      }
+      return 'Entendi. Esta é uma demonstração funcional do INO. A próxima etapa é conectar uma IA real.';
+    }
+
+    function sendMessage() {
+      const value = messageInput.value.trim();
+      if (!value) return;
+      setMode('processing');
+      setBubble(value);
+      messageInput.value = '';
+      setTimeout(() => {
+        const reply = demoReply(value);
+        setBubble(reply);
+        speakText(reply);
+      }, 600);
+    }
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        setBubble('Reconhecimento de voz indisponível neste navegador');
+        return;
+      }
+      app.recognition = new SpeechRecognition();
+      app.recognition.lang = app.language;
+      app.recognition.interimResults = false;
+      app.recognition.continuous = false;
+
+      app.recognition.onstart = () => {
+        app.isListening = true;
+        setMode('listening');
+        setBubble('Ouvindo...');
+      };
+
+      app.recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        messageInput.value = transcript;
+        setMode('processing');
+        setBubble(transcript);
+      };
+
+      app.recognition.onend = () => {
+        app.isListening = false;
+        if (!messageInput.value.trim()) {
+          setMode('idle');
+        }
+      };
+
+      app.recognition.onerror = () => {
+        setMode('error');
+        setBubble('Erro no microfone');
+      };
+    }
+
+    function toggleMic() {
+      if (!app.recognition) {
+        initSpeechRecognition();
+      }
+      if (!app.recognition) {
+        setBubble('Microfone não suportado');
+        return;
+      }
+      if (app.isListening) {
+        app.recognition.stop();
+        setMode('idle');
+      } else {
+        app.recognition.start();
+      }
+    }
+
+    function openMenu() {
+      modal.classList.add('open');
+    }
+
+    function closeMenu() {
+      modal.classList.remove('open');
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    micBtn.addEventListener('click', toggleMic);
+    menuBtn.addEventListener('click', openMenu);
+    closePanel.addEventListener('click', closeMenu);
+    okBtn.addEventListener('click', closeMenu);
+    demoBtn.addEventListener('click', () => {
+      setMode('success');
+      setBubble('Modo demonstração ativado');
+      setTimeout(() => setMode('idle'), 1200);
+    });
+
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    languageSelect.addEventListener('change', (event) => {
+      app.language = event.target.value;
+      if (app.recognition) app.recognition.lang = app.language;
+      setBubble('Idioma selecionado: ' + event.target.options[event.target.selectedIndex].text);
+    });
+
+    modeSelect.addEventListener('change', (event) => {
+      setMode(event.target.value);
+      if (event.target.value === 'idle') setBubble('Olá, ' + app.name + '. Como posso ajudar?');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'd' || event.key === 'D') {
+        debugBox.classList.toggle('show');
+      }
+    });
+
+    function init() {
+      setMode('idle');
+      setBubble('Olá, ' + app.name + '. Como posso ajudar?');
+      followMouse();
+      blinkEyes();
+      initSpeechRecognition();
+      debugBox.textContent = 'INO demo ready';
+    }
+
+    init();
+  </script>
+</body>
+</html>
