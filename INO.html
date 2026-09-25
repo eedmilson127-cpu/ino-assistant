@@ -328,14 +328,6 @@
       padding: 0 5px;
     }
 
-    .chat-surface {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-      background: radial-gradient(circle at 50% 18%, rgba(2,68,90,.11), rgba(0,0,0,0) 45%);
-    }
-
     .ino-floating {
       position: absolute;
       left: 50%;
@@ -633,10 +625,7 @@
     }
 
     .panel-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
+      display: block;
       margin-bottom: 12px;
       padding: 10px 12px;
       border: 1px solid rgba(255,255,255,0.06);
@@ -651,7 +640,7 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
     select, input[type="text"] {
@@ -663,6 +652,13 @@
       padding: 10px 12px;
       font-size: 13px;
       outline: none;
+    }
+
+    .small-note {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
     }
 
     .panel-actions {
@@ -866,29 +862,33 @@
         <h3>INO</h3>
 
         <div class="panel-row">
-          <div>
-            <label>Idioma</label>
-            <select id="languageSelect">
-              <option value="pt-BR">Português</option>
-              <option value="en-US">English</option>
-              <option value="fr-FR">Français</option>
-              <option value="es-ES">Español</option>
-              <option value="de-DE">Deutsch</option>
-            </select>
-          </div>
+          <label>Idioma</label>
+          <select id="languageSelect">
+            <option value="pt-BR">Português</option>
+            <option value="en-US">English</option>
+            <option value="fr-FR">Français</option>
+            <option value="es-ES">Español</option>
+            <option value="de-DE">Deutsch</option>
+          </select>
         </div>
 
         <div class="panel-row">
-          <div>
-            <label>Modo</label>
-            <select id="modeSelect">
-              <option value="idle">Idle</option>
-              <option value="listening">Listening</option>
-              <option value="processing">Processing</option>
-              <option value="speaking">Speaking</option>
-              <option value="success">Success</option>
-              <option value="error">Error</option>
-            </select>
+          <label>Modo</label>
+          <select id="modeSelect">
+            <option value="idle">Idle</option>
+            <option value="listening">Listening</option>
+            <option value="processing">Processing</option>
+            <option value="speaking">Speaking</option>
+            <option value="success">Success</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+
+        <div class="panel-row">
+          <label>Endpoint IA (proxy local)</label>
+          <input id="apiUrlInput" type="text" value="http://localhost:3000/api/ino" placeholder="http://localhost:3000/api/ino" />
+          <div class="small-note">
+            Não coloque a chave da API no navegador. A chave fica no backend/proxy.
           </div>
         </div>
 
@@ -906,15 +906,16 @@
     const app = {
       status: 'idle',
       language: 'pt-BR',
+      apiUrl: 'http://localhost:3000/api/ino',
       speechSupported: ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
       synthSupported: ('speechSynthesis' in window),
       recognition: null,
       isListening: false,
       isSpeaking: false,
-      name: 'Edmilson'
+      name: 'Edmilson',
+      requestInFlight: false
     };
 
-    // UI references
     const statusEl = document.getElementById('statusText');
     const bubbleText = document.querySelector('.ibubble-text');
     const core = document.getElementById('inoCore');
@@ -929,6 +930,7 @@
     const modeSelect = document.getElementById('modeSelect');
     const demoBtn = document.getElementById('demoBtn');
     const okBtn = document.getElementById('okBtn');
+    const apiUrlInput = document.getElementById('apiUrlInput');
 
     const pupilL = document.getElementById('pupilL');
     const pupilR = document.getElementById('pupilR');
@@ -1014,7 +1016,6 @@
       utter.onstart = () => {
         app.isSpeaking = true;
         setMode('speaking');
-        setBubble(text);
       };
       utter.onend = () => {
         app.isSpeaking = false;
@@ -1048,17 +1049,67 @@
       return 'Entendi. Esta é uma demonstração funcional do INO. A próxima etapa é conectar uma IA real.';
     }
 
-    function sendMessage() {
+    async function requestAI(message) {
+      const candidateUrl = (apiUrlInput.value || app.apiUrl || '').trim();
+      app.apiUrl = candidateUrl;
+
+      if (!candidateUrl) {
+        return demoReply(message);
+      }
+
+      try {
+        const response = await fetch(candidateUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            language: app.language,
+            device: 'browser-demo'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Endpoint offline');
+        }
+
+        const data = await response.json();
+
+        if (data.reply) return data.reply;
+        if (data.message) return data.message;
+        if (data.content) return data.content;
+        if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+          return data.choices[0].message.content;
+        }
+
+        return demoReply(message);
+      } catch (error) {
+        console.warn('IA real indisponível, voltando para demo:', error);
+        return demoReply(message);
+      }
+    }
+
+    async function sendMessage() {
       const value = messageInput.value.trim();
-      if (!value) return;
+      if (!value || app.requestInFlight) return;
+
+      app.requestInFlight = true;
       setMode('processing');
       setBubble(value);
       messageInput.value = '';
-      setTimeout(() => {
-        const reply = demoReply(value);
+
+      try {
+        const reply = await requestAI(value);
         setBubble(reply);
+        setMode('success');
         speakText(reply);
-      }, 600);
+        setTimeout(() => setMode('idle'), 1400);
+      } catch (error) {
+        setMode('error');
+        setBubble('Não foi possível processar a mensagem.');
+        setTimeout(() => setMode('idle'), 1500);
+      } finally {
+        app.requestInFlight = false;
+      }
     }
 
     function initSpeechRecognition() {
@@ -1083,6 +1134,7 @@
         messageInput.value = transcript;
         setMode('processing');
         setBubble(transcript);
+        setTimeout(() => sendMessage(), 400);
       };
 
       app.recognition.onend = () => {
@@ -1126,7 +1178,10 @@
     micBtn.addEventListener('click', toggleMic);
     menuBtn.addEventListener('click', openMenu);
     closePanel.addEventListener('click', closeMenu);
-    okBtn.addEventListener('click', closeMenu);
+    okBtn.addEventListener('click', () => {
+      app.apiUrl = (apiUrlInput.value || app.apiUrl).trim();
+      closeMenu();
+    });
     demoBtn.addEventListener('click', () => {
       setMode('success');
       setBubble('Modo demonstração ativado');
@@ -1157,6 +1212,7 @@
     function init() {
       setMode('idle');
       setBubble('Olá, ' + app.name + '. Como posso ajudar?');
+      apiUrlInput.value = app.apiUrl;
       followMouse();
       blinkEyes();
       initSpeechRecognition();
